@@ -1,3 +1,4 @@
+SUMMARY = "LLVM cross compiler"
 LICENSE = "NCSA"
 DEPENDS = "libffi zlib"
 
@@ -22,23 +23,26 @@ do_unpack() {
     mv ${S}/tools/cfe-${PV}.src ${S}/tools/clang
 }
 
+#For LLVM_TABLEGEN and CLANG_TABLEGEN, you will need to put the path to the native (host) llvm-tblgen and clang-tblgen
+#respectively.
+
+#As for LLVM_LIBDIR_SUFFIX, you can omit that if you are using multilib.
+#I added 64 because my multilib points to /usr/lib64.
+
 do_configure() {
     mkdir -p ${LLVM_BUILD_DIR}
     cd ${LLVM_BUILD_DIR}
     cmake \
-                ../ \
-                -DCMAKE_INSTALL_PREFIX=${prefix}\
-                -DLLVM_TABLEGEN=/media/ssd/home/autoeye/llvm-3.5.0.src/build/bin/llvm-tblgen \
-                -DCLANG_TABLEGEN=/media/ssd/home/autoeye/llvm-3.5.0.src/build/bin/clang-tblgen \
-                -DCMAKE_SYSROOT=${STAGING_DIR}\
- 		-DCMAKE_CROSSCOMPILING=True \
-                -DLLVM_DEFAULT_TARGET_TRIPLE=${TARGET_SYS} \
-		-DLLVM_LIBDIR_SUFFIX=64 \
-		-DCLANG_RESOURCE_DIR=../lib/clang/${PV}/
+          ../ \
+          -DCMAKE_INSTALL_PREFIX=${prefix}\
+          -DLLVM_TABLEGEN=/path/to/native/llvm-tblgen \
+          -DCLANG_TABLEGEN=/path/to/native/clang-tblgen \
+          -DCMAKE_SYSROOT=${STAGING_DIR}\
+		  -DCMAKE_CROSSCOMPILING=True \
+          -DLLVM_DEFAULT_TARGET_TRIPLE=${TARGET_SYS} \
+		  -DLLVM_LIBDIR_SUFFIX=64 \
+		  -DCLANG_RESOURCE_DIR=../lib/clang/${PV}/
 }
-
-#-DLLVM_LIBDIR_SUFFIX=64
-#-DCLANG_RESOURCE_DIR=/../../usr/lib/clang/${PV} 
 
 do_compile() {
     cd ${LLVM_BUILD_DIR}
@@ -47,42 +51,12 @@ do_compile() {
 
 do_install(){
     cd ${LLVM_BUILD_DIR}
-    #oe_runmake install
     oe_runmake DESTDIR=${D} install    
 
-    #install -d ${D}${bindir}
-    #install -d ${D}${bindir}/${LLVM_DIR}
-    #mv ${LLVM_INSTALL_DIR}${bindir}/* ${D}${bindir}/${LLVM_DIR}/
     cp -R ${S}/tools/clang/include/clang ${S}/include 
     cp ${LLVM_BUILD_DIR}/tools/clang/include/clang/Basic/DiagnosticCommonKinds.inc  ${S}/include/clang/Basic
 
-    #install -d ${D}${includedir}/${LLVM_DIR}
-    #install -d  ${D}{libdir}/clang/${PV}
-    #mv ${LLVM_INSTALL_DIR}${includedir}/ ${D}${includedir}/${LLVM_DIR}/
-
-    #install -d ${D}${libdir}/${LLVM_DIR}
-    #mv ${LLVM_INSTALL_DIR}${libdir}/* ${D}${libdir}/${LLVM_DIR}/
-    #ln -s ${LLVM_DIR}/libLLVM-${PV}.so ${D}${libdir}/libLLVM-${PV}.so
-
-    #install -d ${D}${docdir}/${LLVM_DIR}
-    #mv ${LLVM_INSTALL_DIR}${prefix}/docs/llvm/* ${D}${docdir}/${LLVM_DIR}
-
-   #install -d  ${D}{libdir}/clang/${PV}
-   #cp ${LLVM_BUILD_DIR}/Release/bin/clang ${D}${bindir}
-   #cp ${LLVM_BUILD_DIR}/Release/bin/llvm* ${D}${bindir}
 }  
-
-
-
-#SYSROOT_PREPROCESS_FUNCS += "llvm_sysroot_preprocess"
-
-#llvm_sysroot_preprocess() {
-#    install -d ${SYSROOT_DESTDIR}${bindir}
-#    install -m 0755 ${LLVM_BUILD_DIR}/bin/llvm-config ${SYSROOT_DESTDIR}${bindir}/llvm-config
-#    install -m 0755 ${LLVM_BUILD_DIR}/bin/llvm-as ${SYSROOT_DESTDIR}${bindir}/llvm-as
-#    install -m 0755 ${LLVM_BUILD_DIR}/bin/llvm-link ${SYSROOT_DESTDIR}${bindir}/llvm-link
-#    install -m 0755 ${LLVM_BUILD_DIR}/bin/clang ${SYSROOT_DESTDIR}${bindir}/clang
-#}
 
 FILES_${PN} += "${bindir}/${LLVM_DIR}/\
 		${bindir}/${LLVM_DIR}/clang\
@@ -94,4 +68,3 @@ FILES_${PN}-dev += " ${libdir}/BugpointPasses.so \
                      ${libdir}/clang  \
                    "
 
-#PACKAGES += "${PN}-staticdev"
